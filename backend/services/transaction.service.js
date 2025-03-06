@@ -1,31 +1,173 @@
+const cron = require("node-cron");
 const Transaction = require("../models/transaction.model");
 
-class TransactionService {
+const createTransaction = async (data) => {
+  return await Transaction.create(data);
+};
+
+const getAllTransactions = async () => {
+  return await Transaction.find();
+};
+
+const getTransactionById = async (id) => {
+  return await Transaction.findById(id);
+};
+
+const updateTransaction = async (id, data) => {
+  return await Transaction.findByIdAndUpdate(id, data, { new: true, runValidators: true });
+};
+
+const deleteTransaction = async (id) => {
+  return await Transaction.findByIdAndDelete(id);
+};
+
+// Filter Transactions by Tags
+const filterTransactionsByTags = async (tags) => {
+  return await Transaction.find({ tags: { $in: tags } });
+};
+
+// Sort Transactions by Date (Ascending or Descending)
+const sortTransactionsByDate = async (order = "asc") => {
+  return await Transaction.find().sort({ date: order === "asc" ? 1 : -1 });
+};
+
+const updateTransactionTags = async (id, tags) => {
+  return await Transaction.findByIdAndUpdate(id, { tags }, { new: true, runValidators: true });
+};
+
+// Function to process recurring transactions
+// const processRecurringTransactions = async () => {
+//   const today = new Date();
   
-  // Create Transaction
-  async createTransaction(data) {
-    return await Transaction.create(data);
+//   // Find all recurring transactions that should run today
+//   const recurringTransactions = await Transaction.find({
+//     isRecurring: true,
+//     endDate: { $gte: today }, // Transactions that haven't ended
+//   });
+
+//   for (const transaction of recurringTransactions) {
+//     const lastTransactionDate = new Date(transaction.date);
+//     let nextTransactionDate = new Date(lastTransactionDate);
+
+//     // Calculate next transaction date based on recurrencePattern
+//     switch (transaction.recurrencePattern) {
+//       case "daily":
+//         nextTransactionDate.setDate(lastTransactionDate.getDate() + 1);
+//         break;
+//       case "weekly":
+//         nextTransactionDate.setDate(lastTransactionDate.getDate() + 7);
+//         break;
+//       case "monthly":
+//         nextTransactionDate.setMonth(lastTransactionDate.getMonth() + 1);
+//         break;
+//     }
+
+//     if (nextTransactionDate <= today) { 
+//       // Clone the transaction with updated date
+//       const newTransaction = new Transaction({
+//         ...transaction.toObject(),
+//         _id: undefined, // Ensure a new transaction is created
+//         date: nextTransactionDate,
+//       });
+
+//       await newTransaction.save();
+//       console.log(`✅ Recurring transaction created for ${transaction.category}`);
+//     }
+//   }
+// };
+
+// // Schedule cron job to run every minute
+// cron.schedule("* * * * *", async () => {
+//   console.log("🔄 Checking for recurring transactions...");
+//   await processRecurringTransactions();
+// });
+
+const generateFinancialReport = async (filters) => {
+  const { startDate, endDate, category, tags } = filters;
+  
+  let query = {};
+
+  if (startDate && endDate) {
+    query.date = { $gte: new Date(startDate), $lte: new Date(endDate) };
   }
 
-  // Get All Transactions
-  async getAllTransactions() {
-    return await Transaction.find();
+  if (category) {
+    query.category = category;
   }
 
-  // Get Transaction by ID
-  async getTransactionById(id) {
-    return await Transaction.findById(id);
+  if (tags) {
+    query.tags = { $in: tags.split(",") }; // Expecting comma-separated tags
   }
 
-  // Update Transaction
-  async updateTransaction(id, data) {
-    return await Transaction.findByIdAndUpdate(id, data, { new: true, runValidators: true });
+  const transactions = await Transaction.find(query);
+
+  let totalIncome = 0;
+  let totalExpenses = 0;
+
+  transactions.forEach((transaction) => {
+    if (transaction.type === "income") {
+      totalIncome += transaction.amount;
+    } else if (transaction.type === "expense") {
+      totalExpenses += transaction.amount;
+    }
+  });
+
+  return {
+    totalIncome,
+    totalExpenses,
+    balance: totalIncome - totalExpenses,
+    transactions,
+  };
+};
+
+const calculateMonthlyBudget = async (budget, month, year) => {
+  const startDate = new Date(year, month - 1, 1); // First day of the month
+  const endDate = new Date(year, month, 0, 23, 59, 59); // Last day of the month
+
+  // Fetch all transactions within the specified month
+  const transactions = await Transaction.find({
+    date: { $gte: startDate, $lte: endDate },
+  });
+
+  let totalIncome = 0;
+  let totalExpenses = 0;
+
+  transactions.forEach((transaction) => {
+    if (transaction.type === "income") {
+      totalIncome += transaction.amount;
+    } else if (transaction.type === "expense") {
+      totalExpenses += transaction.amount;
+    }
+  });
+
+  const remainingBudget = budget - totalExpenses;
+  const budgetExceeded = remainingBudget < 0;
+
+  let recommendation = "You are within budget!";
+  if (budgetExceeded) {
+    recommendation = `Budget exceeded by ${Math.abs(remainingBudget)}. Consider reducing expenses in non-essential categories.`;
+  } else if (remainingBudget < budget * 0.2) {
+    recommendation = `You are nearing your budget limit. Remaining: ${remainingBudget}`;
   }
 
-  // Delete Transaction
-  async deleteTransaction(id) {
-    return await Transaction.findByIdAndDelete(id);
-  }
-}
+  return {
+    totalIncome,
+    totalExpenses,
+    remainingBudget,
+    budgetExceeded,
+    recommendation,
+  };
+};
 
-module.exports = new TransactionService();
+module.exports = {
+  createTransaction,
+  getAllTransactions,
+  getTransactionById,
+  updateTransaction,
+  deleteTransaction,
+  filterTransactionsByTags,
+  sortTransactionsByDate,
+  updateTransactionTags,
+  generateFinancialReport,
+  calculateMonthlyBudget, // Added new function
+};
