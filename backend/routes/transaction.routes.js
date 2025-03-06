@@ -26,6 +26,9 @@ router.get("/chart-data", verifyToken, transactionController.generateChartData);
 // API to calculate monthly budget
 router.get("/budget-analysis", verifyToken, transactionController.calculateMonthlyBudget);
 
+// API to track savings progress
+router.get("/savings-progress", verifyToken, transactionController.trackSavingsProgress);
+
 
 
 // 🔒 Admin-only route (Example)

@@ -141,6 +141,16 @@ const calculateMonthlyBudget = async (req, res, next) => {
   }
 };
 
+const trackSavingsProgress = async (req, res, next) => {
+  try {
+    const progress = await transactionService.trackSavingsProgress(req.user.id);
+    responseHandler.success(res, "Savings progress retrieved successfully", progress);
+  } catch (error) {
+    next(error);
+  }
+};
+
+
 module.exports = {
   createTransaction,
   getAllTransactions,
@@ -153,4 +163,5 @@ module.exports = {
   generateFinancialReport,
   generateChartData,
   calculateMonthlyBudget, // Added function
+  trackSavingsProgress,
 };

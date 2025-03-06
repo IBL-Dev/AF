@@ -20,10 +20,12 @@ app.use(bodyParser.urlencoded({ extended: true })); // Support URL-encoded bodie
 const authRoutes = require("./routes/auth.routes");
 const userRoutes = require("./routes/user.routes");
 const transactionRoutes = require("./routes/transaction.routes");
+const goalRoutes = require("./routes/goal.routes");
 
 app.use("/api/auth", authRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/transaction", transactionRoutes);
+app.use("/api/goal", goalRoutes);
 
 // Test Route
 app.get("/", (req, res) => {

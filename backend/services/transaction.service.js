@@ -1,5 +1,6 @@
 const cron = require("node-cron");
 const Transaction = require("../models/transaction.model");
+const Goal = require("../models/goal.model");
 
 const createTransaction = async (data) => {
   return await Transaction.create(data);
@@ -159,6 +160,40 @@ const calculateMonthlyBudget = async (budget, month, year) => {
   };
 };
 
+const trackSavingsProgress = async (userId) => {
+  const goals = await Goal.find({ userId });
+
+  const progress = goals.map((goal) => {
+    const percentageSaved = ((goal.currentAmount / goal.targetAmount) * 100).toFixed(2);
+    return {
+      title: goal.title,
+      targetAmount: goal.targetAmount,
+      currentAmount: goal.currentAmount,
+      percentageSaved: percentageSaved + "%",
+      deadline: goal.deadline,
+      status: goal.currentAmount >= goal.targetAmount ? "Goal Achieved" : "In Progress",
+    };
+  });
+
+  return progress;
+};
+
+const allocateSavingsAutomatically = async (transaction) => {
+  if (transaction.type !== "income") return; // Only allocate from income
+
+  const goals = await Goal.find({ userId: transaction.userId, autoAllocate: true });
+
+  for (const goal of goals) {
+    const allocationAmount = (transaction.amount * goal.allocationPercentage) / 100;
+
+    if (goal.currentAmount + allocationAmount <= goal.targetAmount) {
+      goal.currentAmount += allocationAmount;
+      await goal.save();
+    }
+  }
+};
+
+
 module.exports = {
   createTransaction,
   getAllTransactions,
@@ -170,4 +205,7 @@ module.exports = {
   updateTransactionTags,
   generateFinancialReport,
   calculateMonthlyBudget, // Added new function
+  trackSavingsProgress,
+  allocateSavingsAutomatically,
+  
 };
