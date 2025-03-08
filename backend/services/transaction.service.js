@@ -84,7 +84,7 @@ const updateTransactionTags = async (id, tags) => {
 // });
 
 const generateFinancialReport = async (filters) => {
-  const { startDate, endDate, category, tags } = filters;
+  const { startDate, endDate, category, tags, currency = "LKR" } = filters;
   
   let query = {};
 
@@ -113,13 +113,41 @@ const generateFinancialReport = async (filters) => {
     }
   });
 
+  const balance = totalIncome - totalExpenses;
+
+  // Define conversion rates
+  const conversionRates = {
+    LKR: 1, // Default
+    USD: 1 / 300, // Convert from LKR to USD
+    EUR: 1 / 320, // Convert from LKR to EUR
+  };
+
+  // Check if the requested currency is supported
+  if (!conversionRates[currency]) {
+    return {
+      error: "Currency not supported",
+      supportedCurrencies: Object.keys(conversionRates),
+    };
+  }
+
+  // Convert amounts based on selected currency
+  const exchangeRate = conversionRates[currency];
+  const convertedTotalIncome = (totalIncome * exchangeRate).toFixed(2);
+  const convertedTotalExpenses = (totalExpenses * exchangeRate).toFixed(2);
+  const convertedBalance = (balance * exchangeRate).toFixed(2);
+
   return {
-    totalIncome,
-    totalExpenses,
-    balance: totalIncome - totalExpenses,
-    transactions,
+    currency, // Show selected currency
+    totalIncome: convertedTotalIncome,
+    totalExpenses: convertedTotalExpenses,
+    balance: convertedBalance,
+    transactions: transactions.map((t) => ({
+      ...t.toObject(),
+      amount: (t.amount * exchangeRate).toFixed(2),
+    })),
   };
 };
+
 
 const calculateMonthlyBudget = async (budget, month, year) => {
   const startDate = new Date(year, month - 1, 1); // First day of the month
