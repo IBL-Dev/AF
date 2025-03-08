@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 
 const transactionSchema = new mongoose.Schema({
   type: { type: String, enum: ["income", "expense"], required: true },
+  userId:{type :String},
   amount: { type: Number, required: true },
   category: { type: String,enum:["Food","Transportation","Entertainment"], default: "Not set" },
   tags: { type: [String],enum :["vacation","work","utilities"], default: [] }, // Allowing custom tags

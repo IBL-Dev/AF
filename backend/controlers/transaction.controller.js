@@ -3,7 +3,16 @@ const responseHandler = require("../utils/responseHeader");
 
 const createTransaction = async (req, res, next) => {
   try {
-    const transaction = await transactionService.createTransaction(req.body);
+    // Ensure user ID is set from the token
+    const userId = req.user.id;  
+
+    // Merge userId into the transaction data
+    const transactionData = {
+      ...req.body,
+      userId, // Attach user ID from the token
+    };
+
+    const transaction = await transactionService.createTransaction(transactionData);
     responseHandler.success(res, "Transaction created successfully", transaction);
   } catch (error) {
     next(error);

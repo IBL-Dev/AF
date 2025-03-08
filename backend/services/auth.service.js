@@ -68,4 +68,4 @@ exports.loginUser = async (email, password) => {
 
 // Export Password Functions
 exports.hashPassword = hashPassword;
-exports.comparePassword = comparePassword;
+exports.comparePassword = comparePassword; 
