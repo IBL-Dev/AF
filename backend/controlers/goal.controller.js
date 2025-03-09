@@ -2,17 +2,23 @@ const Goal = require("../models/goal.model");
 const responseHandler = require("../utils/responseHeader");
 
 const createGoal = async (req, res, next) => {
-    try {
-      if (!req.user || !req.user.id) {
-        return responseHandler.error(res, "Unauthorized: User ID is missing", 401);
-      }
-  
-      const goal = await Goal.create({ userId: req.user.id, ...req.body });
-      responseHandler.success(res, "Goal created successfully", goal);
-    } catch (error) {
-      next(error);
+  try {
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: "Unauthorized: User ID is missing" });
     }
-  };
+
+    const goal = new Goal({ userId: req.user.id, ...req.body });
+    const savedGoal = await goal.save(); // Ensure this properly resolves
+
+    res.status(200).json({
+      message: "Goal created successfully",
+      data: savedGoal,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
   
 const updateGoal = async (req, res, next) => {
   try {
