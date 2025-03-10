@@ -18,6 +18,7 @@ const userRoutes = require("./routes/user.routes");
 const transactionRoutes = require("./routes/transaction.routes");
 const goalRoutes = require("./routes/goal.routes");
 const dashboardRoutes = require("./routes/dashboard.routes");
+const { processRecurringTransactions } = require("./services/recurring.service");
 
 // API Routes
 app.use("/api/auth", authRoutes);
@@ -25,6 +26,8 @@ app.use("/api/users", userRoutes);
 app.use("/api/transaction", transactionRoutes);
 app.use("/api/goal", goalRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+
+processRecurringTransactions();
 
 // Test Route
 app.get("/", (req, res) => {
@@ -35,7 +38,7 @@ app.get("/", (req, res) => {
 if (process.env.NODE_ENV !== "test") {
   require("./config/db"); // Load database connection
 
-  const PORT = process.env.PORT || 5000;
+  const PORT = process.env.PORT;
   app.listen(PORT, () => {
     console.log(`🚀 Server is running on: http://localhost:${PORT}`);
   });

@@ -9,12 +9,12 @@ exports.verifyToken = (req, res, next) => {
 
   const token = authHeader.split(" ")[1];
 
-  jwt.verify(token, process.env.JWT_SECRET || "aslfkaworkw3eokmdvkefepfosdksdvk", (err, decoded) => {
+  jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
     if (err) {
       return res.status(401).json({ message: "Unauthorized!" }); // ✅ Matching test case expectation
     }
 
-    console.log("✅ Decoded JWT:", decoded);
+    
     
     req.user = { id: decoded.id, role: decoded.role }; // Store user details in req.user
     next();
