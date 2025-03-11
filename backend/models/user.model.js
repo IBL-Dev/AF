@@ -18,7 +18,7 @@ const usersSchema = mongoose.Schema({
         type : String,
         require : true
     },
-    role: { type: String, enum: ["admin", "user"], default: "user" } ,// Default to regular user
+    role: { type: String, enum: ["Admin", "user"], default: "user" } ,// Default to regular user
 
     imageurl :{
         type: String,
